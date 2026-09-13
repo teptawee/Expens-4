@@ -1,9 +1,8 @@
 /**
- * config.js - ค่าคงที่และการตั้งค่าทั้งหมด
- * ตั้งค่า GAS_API_URL ที่นี่เพื่อเชื่อมต่อ Google Apps Script
+ * config.js - ค่าคงที่ทั้งหมด
+ * ✅ แก้ GAS_API_URL หลัง Deploy Google Apps Script เป็น Web App
  */
 
-// ✅ แก้ URL นี้หลัง Deploy GAS เป็น Web App
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzFRV5Of0HPMwEkI5Qp9qI304AJ7j0AJhdjHUiQzveLZnyGcX7yEkaNCnNAd8_Uyiy0xA/exec'
 
 const APP = {
