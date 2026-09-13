@@ -25,7 +25,6 @@ function initApp() {
   loadAllData();
 }
 
-/** โหลดข้อมูลทั้งหมดพร้อมกันแบบขนาน (เร็วกว่าเดิม 4x) */
 async function loadAllData() {
   showLoading(true, 'กำลังโหลดข้อมูล...');
   try {
@@ -77,6 +76,7 @@ function showView(view) {
   const nav = document.getElementById('nav' + view.charAt(0).toUpperCase() + view.slice(1));
   if (nav) nav.classList.add('active');
 
+  // Mobile bottom nav
   document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
   const navMob = document.getElementById('nav' + view.charAt(0).toUpperCase() + view.slice(1) + 'Mob');
   if (navMob) navMob.classList.add('active');
