@@ -14,12 +14,25 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
+<script>
+  tailwind.config = {
+    theme: {
+      screens: { sm: '768px', md: '1024px', lg: '1280px', xl: '1440px' },
+      extend: {
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', 'Noto Sans Thai', '-apple-system', 'BlinkMacSystemFont', 'sans-serif']
+        }
+      }
+    }
+  };
+</script>
+
 <link rel="stylesheet" href="css/style.css"/>
 </head>
 
 <body class="min-h-screen flex flex-col antialiased">
 
-<!-- HEADER -->
+<!-- ========== HEADER ========== -->
 <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-indigo-100/70 safe-top">
   <div class="app-container h-16 flex items-center justify-between gap-2">
     <button class="flex items-center gap-3 text-left min-w-0" onclick="showView('dashboard')">
@@ -53,7 +66,7 @@
   </div>
 </header>
 
-<!-- MAIN -->
+<!-- ========== MAIN ========== -->
 <main class="flex-1 w-full" style="padding-bottom: calc(6.5rem + var(--safe-bottom));">
   <div class="app-container py-5">
 
@@ -309,18 +322,36 @@
   </div>
 </main>
 
-<!-- BOTTOM NAV -->
+<!-- ========== BOTTOM NAV (มีปุ่ม "บันทึก" เพิ่ม) ========== -->
 <nav class="bottom-nav">
   <div class="bottom-nav-grid">
-    <button class="bottom-nav-item active" id="navDashboardMob" onclick="showView('dashboard')"><i class="fa-solid fa-house"></i><span>ภาพรวม</span></button>
-    <button class="bottom-nav-item" id="navHistoryMob" onclick="showView('history')"><i class="fa-solid fa-list"></i><span>ประวัติ</span></button>
-    <button class="fab-btn" onclick="showView('expense')" aria-label="บันทึก"><i class="fa-solid fa-plus"></i></button>
-    <button class="bottom-nav-item" id="navMasterMob" onclick="showView('master')"><i class="fa-solid fa-sliders"></i><span>ตั้งค่า</span></button>
-    <button class="bottom-nav-item" onclick="location.reload()"><i class="fa-solid fa-rotate"></i><span>รีเฟรช</span></button>
+
+    <button class="bottom-nav-item active" id="navDashboardMob" onclick="showView('dashboard')">
+      <i class="fa-solid fa-house"></i><span>ภาพรวม</span>
+    </button>
+
+    <button class="bottom-nav-item" id="navHistoryMob" onclick="showView('history')">
+      <i class="fa-solid fa-list"></i><span>ประวัติ</span>
+    </button>
+
+    <!-- ✅ FAB กลาง -->
+    <button class="fab-btn" onclick="showView('expense')" aria-label="บันทึก">
+      <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <!-- ✅ ปุ่ม "บันทึก" (เมนูแยก) -->
+    <button class="bottom-nav-item" id="navExpenseMob" onclick="showView('expense')">
+      <i class="fa-solid fa-pen-to-square"></i><span>บันทึก</span>
+    </button>
+
+    <button class="bottom-nav-item" id="navMasterMob" onclick="showView('master')">
+      <i class="fa-solid fa-sliders"></i><span>ตั้งค่า</span>
+    </button>
+
   </div>
 </nav>
 
-<!-- MODALS -->
+<!-- ========== MODALS ========== -->
 <div class="modal" id="categoryModal">
   <div class="modal-panel">
     <div class="flex items-center justify-between pb-3 mb-4 border-b border-indigo-50">
@@ -371,7 +402,7 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Scripts: โหลดตามลำดับ dependency -->
+<!-- ========== SCRIPTS ========== -->
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/charts.js"></script>
