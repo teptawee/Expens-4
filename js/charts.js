@@ -1,14 +1,9 @@
 /**
- * charts.js - จัดการ Chart.js ทั้งหมด
+ * charts.js - จัดการ Chart.js
  */
 
 let paymentChart = null;
 let categoryChart = null;
-
-function destroyCharts() {
-  if (paymentChart) { paymentChart.destroy(); paymentChart = null; }
-  if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
-}
 
 const TOOLTIP_CONFIG = {
   backgroundColor: '#1e1b4b',
