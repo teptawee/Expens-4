@@ -1,7 +1,6 @@
 /**
  * api.js - จัดการเรียก API ไปยัง Google Apps Script
- * - ใช้ JSONP เพื่อหลีกเลี่ยง CORS
- * - มี cache ใน memory + sessionStorage
+ * ใช้ fetch + POST และ cache ในหน่วยความจำ
  */
 
 const API_CACHE = new Map();
@@ -32,9 +31,6 @@ function clearCache(prefix) {
   }
 }
 
-/**
- * เรียก GAS ผ่าน fetch + POST (เมื่อตั้ง GAS_API_URL)
- */
 async function callGAS(fn, args) {
   if (!GAS_API_URL) {
     throw new Error('ยังไม่ได้ตั้งค่า GAS_API_URL ใน js/config.js');
@@ -53,9 +49,6 @@ async function callGAS(fn, args) {
   return await res.json();
 }
 
-/**
- * Public API พร้อม cache
- */
 async function apiCall(fn, args, useCache = true) {
   const key = cacheKey(fn, args);
   if (useCache) {
