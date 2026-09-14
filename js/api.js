@@ -1,23 +1,21 @@
 /**
  * api.js - จัดการเรียก API ไปยัง Google Apps Script
- * ✅ เพิ่ม persistent cache (sessionStorage) + TTL 5 นาที + in-flight dedupe
+ * ✅ persistent cache (sessionStorage) + TTL 5 นาที + in-flight dedupe
  */
 
 const API_CACHE = new Map();
-const CACHE_TTL = 5 * 60 * 1000;          // 5 นาที
+const CACHE_TTL = 5 * 60 * 1000;
 const CACHE_PREFIX = 'exp_cache_';
-const INFLIGHT = new Map();                // กันยิงซ้ำตอนเรียกพร้อมกัน
+const INFLIGHT = new Map();
 
 function cacheKey(fn, args) {
   return fn + ':' + JSON.stringify(args || {});
 }
 
 function getCached(key) {
-  // 1) memory cache
   const item = API_CACHE.get(key);
   if (item && Date.now() - item.time <= CACHE_TTL) return item.data;
 
-  // 2) sessionStorage fallback
   try {
     const raw = sessionStorage.getItem(CACHE_PREFIX + key);
     if (raw) {
@@ -38,7 +36,7 @@ function setCache(key, data) {
   API_CACHE.set(key, entry);
   try {
     sessionStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry));
-  } catch (e) { /* quota exceeded */ }
+  } catch (e) { /* quota */ }
 }
 
 function clearCache(prefix) {
@@ -85,7 +83,6 @@ async function apiCall(fn, args, useCache = true) {
     if (cached) return cached;
   }
 
-  // ✅ กันยิงซ้ำ: ถ้ากำลังโหลดอยู่ ให้รอ promise เดิม
   if (INFLIGHT.has(key)) return INFLIGHT.get(key);
 
   const promise = (async () => {
