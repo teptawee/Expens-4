@@ -2,6 +2,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
   --bottom-nav-h: 72px;
+  --header-h: 64px;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -23,6 +24,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-size: 16px;
   line-height: 1.5;
+  padding-top: var(--header-h);
 }
 
 img, table, pre, code, iframe { max-width: 100%; }
@@ -32,6 +34,36 @@ img, table, pre, code, iframe { max-width: 100%; }
 
 .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; letter-spacing: -0.02em; }
 
+/* ==========================================
+   APP HEADER — ล็อกติดบนสุด (FIXED)
+   ========================================== */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding-top: var(--safe-top);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(224, 231, 255, 0.7);
+  box-shadow: 0 2px 12px -4px rgba(99, 102, 241, 0.08);
+  transition: box-shadow 0.25s, background 0.25s;
+}
+
+.app-header.scrolled {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 20px -4px rgba(99, 102, 241, 0.18);
+}
+
+@media (max-width: 1279px) {
+  body { padding-top: calc(var(--header-h) + var(--safe-top)); }
+}
+
+/* ==========================================
+   ZEN CARD
+   ========================================== */
 .zen-card {
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(224, 231, 255, 0.7);
@@ -40,7 +72,7 @@ img, table, pre, code, iframe { max-width: 100%; }
 }
 
 /* ==========================================
-   HERO CARD — เพิ่มลูกเล่น
+   HERO CARD — พร้อม animation
    ========================================== */
 .hero-card {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #ec4899 100%);
@@ -119,7 +151,7 @@ img, table, pre, code, iframe { max-width: 100%; }
 }
 
 /* ==========================================
-   STAT PILL — เพิ่มมิติ
+   STAT PILL
    ========================================== */
 .stat-pill {
   background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
@@ -145,6 +177,9 @@ img, table, pre, code, iframe { max-width: 100%; }
   box-shadow: 0 0 0 4px rgba(255,255,255,0.6), 0 4px 10px -2px rgba(99,102,241,0.15);
 }
 
+/* ==========================================
+   VIEW SWITCHING
+   ========================================== */
 .view { display: none; animation: fadeIn 0.25s ease forwards; }
 .view.active { display: block; }
 @keyframes fadeIn {
@@ -235,6 +270,9 @@ img, table, pre, code, iframe { max-width: 100%; }
   .table-wrap td[data-label="จัดการ"]::before { display: none; }
 }
 
+/* ==========================================
+   BADGE
+   ========================================== */
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 10px; border-radius: 9999px;
@@ -243,6 +281,9 @@ img, table, pre, code, iframe { max-width: 100%; }
 .badge-active { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 .badge-inactive { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
 
+/* ==========================================
+   MODAL
+   ========================================== */
 .modal {
   display: none; position: fixed; inset: 0;
   background: rgba(30, 27, 75, 0.4);
@@ -267,6 +308,9 @@ img, table, pre, code, iframe { max-width: 100%; }
   .modal-panel { border-radius: 24px; padding: 28px; max-height: 90vh; }
 }
 
+/* ==========================================
+   TOAST
+   ========================================== */
 .toast {
   position: fixed; right: 16px; left: 16px;
   bottom: calc(var(--bottom-nav-h) + 16px + var(--safe-bottom));
@@ -277,6 +321,9 @@ img, table, pre, code, iframe { max-width: 100%; }
 }
 .toast.show { display: flex; align-items: center; gap: 10px; }
 
+/* ==========================================
+   LOADING
+   ========================================== */
 .loading {
   display: none; position: fixed; inset: 0;
   background: rgba(248, 250, 255, 0.9);
@@ -295,6 +342,9 @@ img, table, pre, code, iframe { max-width: 100%; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ==========================================
+   TOUCH BUTTON
+   ========================================== */
 .touch-btn {
   min-width: 44px; min-height: 44px;
   display: inline-flex; align-items: center; justify-content: center;
@@ -352,6 +402,9 @@ img, table, pre, code, iframe { max-width: 100%; }
 }
 .fab-btn i { font-size: 22px; }
 
+/* ==========================================
+   FORM INPUT
+   ========================================== */
 .form-input {
   width: 100%;
   background: rgba(240, 243, 255, 0.5);
@@ -379,9 +432,15 @@ input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 
+/* ==========================================
+   SAFE AREA
+   ========================================== */
 .safe-top { padding-top: var(--safe-top); }
 .app-header.safe-top { padding-top: var(--safe-top); }
 
+/* ==========================================
+   TRANSACTION ITEM (Recent)
+   ========================================== */
 .tx-item {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 4px; border-bottom: 1px solid #f1f4fd;
@@ -393,6 +452,9 @@ input[type="number"] { -moz-appearance: textfield; }
   flex-shrink: 0; font-size: 18px;
 }
 
+/* ==========================================
+   SECTION TITLE
+   ========================================== */
 .section-title {
   display: flex; align-items: center; gap: 8px;
   font-weight: 700; font-size: 16px;
@@ -400,9 +462,15 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 .section-bar { width: 4px; height: 18px; border-radius: 4px; display: inline-block; }
 
+/* ==========================================
+   CHART WRAP
+   ========================================== */
 .chart-wrap { position: relative; height: 200px; width: 100%; }
 @media (min-width: 768px) { .chart-wrap { height: 240px; } }
 
+/* ==========================================
+   RESPONSIVE NAV
+   ========================================== */
 @media (max-width: 1279px) {
   .desktop-nav { display: none !important; }
   .bottom-nav { display: block !important; }
@@ -413,6 +481,9 @@ input[type="number"] { -moz-appearance: textfield; }
   main { padding-bottom: 2rem !important; }
 }
 
+/* ==========================================
+   GRID HELPERS
+   ========================================== */
 .grid-2-mobile { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 768px) { .grid-2-mobile { grid-template-columns: 1fr 1fr; } }
 
@@ -423,6 +494,9 @@ input[type="number"] { -moz-appearance: textfield; }
 @media (min-width: 768px) { .grid-4-budget { grid-template-columns: repeat(2, 1fr); gap: 14px; } }
 @media (min-width: 1280px) { .grid-4-budget { grid-template-columns: repeat(4, 1fr); gap: 14px; } }
 
+/* ==========================================
+   SMALL SCREEN TWEAKS
+   ========================================== */
 @media (max-width: 360px) {
   .bottom-nav-item { font-size: 10px; }
   .bottom-nav-item i { font-size: 18px; }
