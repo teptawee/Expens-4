@@ -6,7 +6,7 @@ const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzFRV5Of0HPMwEkI5Qp
 
 const APP = {
   NAME: 'ระบบบันทึกค่าใช้จ่ายประจำวัน',
-  VERSION: '1.3 FAST',
+  VERSION: '1.4 HISTORY V2',
   TIMEZONE: 'Asia/Bangkok'
 };
 
@@ -16,9 +16,9 @@ const THEME_COLORS = [
 ];
 
 const CATEGORY_ICONS = [
-  { key: 'อาหาร', icon: 'fa-solid fa-utensils', color: '#6366f1' },
-  { key: 'เครื่องดื่ม', icon: 'fa-solid fa-mug-hot', color: '#8b5cf6' },
-  { key: 'กาแฟ', icon: 'fa-solid fa-mug-saucer', color: '#a855f7' },
+  { key: 'อาหาร', icon: 'fa-solid fa-utensils', color: '#f59e0b' },
+  { key: 'เครื่องดื่ม', icon: 'fa-solid fa-mug-hot', color: '#10b981' },
+  { key: 'กาแฟ', icon: 'fa-solid fa-mug-saucer', color: '#8b5cf6' },
   { key: 'เดินทาง', icon: 'fa-solid fa-bus', color: '#06b6d4' },
   { key: 'น้ำมัน', icon: 'fa-solid fa-gas-pump', color: '#f43f5e' },
   { key: 'รถ', icon: 'fa-solid fa-car', color: '#0891b2' },
