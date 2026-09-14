@@ -1,6 +1,7 @@
 /**
  * app.js - Logic หลักของแอป
- * ✅ ปรับให้โหลดแบบ progressive + refresh เฉพาะที่จำเป็น
+ * ✅ Progressive loading + refresh เฉพาะที่จำเป็น
+ * ✅ History แบบ Group by Date พร้อม Filter Tabs
  */
 
 const APP_DATA = {
@@ -12,7 +13,18 @@ const APP_DATA = {
 };
 
 let loadingCount = 0;
-let currentExpensePage = 1;
+
+/* =====================================================
+   HISTORY STATE
+   ===================================================== */
+let historyState = {
+  range: 7,
+  dateFrom: '',
+  dateTo: '',
+  category: '',
+  page: 1,
+  perPage: 5                 // 5 วัน / หน้า
+};
 
 /* =====================================================
    INIT
@@ -24,10 +36,11 @@ function initApp() {
   setCurrentDate();
   showView('dashboard');
   loadAllData();
+  setHistoryRange(7);
 }
 
 /* =====================================================
-   LOAD DATA (progressive — แสดงทันทีที่แต่ละตัวเสร็จ)
+   LOAD DATA — progressive
    ===================================================== */
 async function loadAllData() {
   showLoading(true, 'กำลังโหลดข้อมูล...');
@@ -45,7 +58,7 @@ async function loadAllData() {
     API.getExpenses().then(r => {
       if (r && r.success !== false) {
         APP_DATA.expenses = r.data || [];
-        renderExpenseTable();
+        renderHistoryGrouped();
         renderRecentTransactions();
       }
     }).catch(e => console.warn('expenses:', e)),
@@ -72,11 +85,8 @@ async function loadAllData() {
   }
 }
 
-/* =====================================================
-   REFRESH AFTER CHANGE (โหลดเฉพาะ 3 ตัว — ไม่รวม master)
-   ===================================================== */
 async function refreshAfterChange() {
-  clearCache();                            // เคลียร์ cache เก่า
+  clearCache();
   showLoading(true, 'กำลังอัปเดต...');
   try {
     const [expenses, dashboard, weekly] = await Promise.all([
@@ -87,7 +97,7 @@ async function refreshAfterChange() {
 
     if (expenses && expenses.success !== false) {
       APP_DATA.expenses = expenses.data || [];
-      renderExpenseTable();
+      renderHistoryGrouped();
       renderRecentTransactions();
     }
     if (dashboard && dashboard.success !== false) {
@@ -121,7 +131,7 @@ function showView(view) {
   const navMob = document.getElementById('nav' + view.charAt(0).toUpperCase() + view.slice(1) + 'Mob');
   if (navMob) navMob.classList.add('active');
 
-  if (view === 'history') renderExpenseTable();
+  if (view === 'history') renderHistoryGrouped();
   if (view === 'master') renderMasterTables();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -210,20 +220,43 @@ function setCurrentDate() {
 }
 
 /* =====================================================
+   NUMBER ANIMATION
+   ===================================================== */
+function animateNumber(el, target, duration = 800, formatter = (v) => money(v)) {
+  if (!el) return;
+  const startTime = performance.now();
+
+  function tick(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = target * eased;
+    el.textContent = formatter(current);
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = formatter(target);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* =====================================================
    DASHBOARD
    ===================================================== */
 function renderDashboard() {
   const d = APP_DATA.dashboard || {};
-  document.getElementById('heroMonth').textContent = money(d.month);
-  document.getElementById('heroBudget').textContent = money(d.totalBudget).replace(/\.00$/, '');
-  document.getElementById('heroRemain').textContent = money(d.totalBudgetRemaining).replace(/\.00$/, '');
+
+  animateNumber(document.getElementById('heroMonth'), Number(d.month || 0));
+  animateNumber(document.getElementById('heroBudget'), Number(d.totalBudget || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+  animateNumber(document.getElementById('heroRemain'), Number(d.totalBudgetRemaining || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+
   document.getElementById('heroPercent').textContent = (d.budgetUsagePercent || 0) + '%';
-  document.getElementById('heroProgress').style.width = Math.min(100, d.budgetUsagePercent || 0) + '%';
+  const progressEl = document.getElementById('heroProgress');
+  progressEl.style.transition = 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+  progressEl.style.width = Math.min(100, d.budgetUsagePercent || 0) + '%';
   document.getElementById('heroCompare').textContent = '-3.1%';
 
-  document.getElementById('pillToday').textContent = money(d.today).replace(/\.00$/, '');
-  document.getElementById('pillWeek').textContent = money(d.week).replace(/\.00$/, '');
-  document.getElementById('pillYear').textContent = money(d.year).replace(/\.00$/, '');
+  animateNumber(document.getElementById('pillToday'), Number(d.today || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+  animateNumber(document.getElementById('pillWeek'), Number(d.week || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+  animateNumber(document.getElementById('pillYear'), Number(d.year || 0), 800, (v) => money(v).replace(/\.00$/, ''));
 
   renderBudgetGrid(d);
   renderPaymentChart(d);
@@ -466,7 +499,7 @@ async function saveExpense() {
     }
     toast(result.message || 'บันทึกสำเร็จ');
     resetExpenseForm();
-    await refreshAfterChange();     // ✅ เปลี่ยนจาก loadAllData()
+    await refreshAfterChange();
     showView('history');
   } catch (err) {
     toast('Error: ' + (err.message || err));
@@ -495,7 +528,7 @@ async function removeExpense(id) {
       return;
     }
     toast(result.message || 'ลบสำเร็จ');
-    await refreshAfterChange();     // ✅ เปลี่ยน
+    await refreshAfterChange();
   } catch (err) {
     toast('Error: ' + (err.message || err));
   } finally {
@@ -517,103 +550,204 @@ function editExpense(id) {
 }
 
 /* =====================================================
-   EXPENSE TABLE
+   HISTORY — FILTER CONTROLS
    ===================================================== */
-function renderExpenseTable() {
-  const tbody = document.getElementById('expenseTableBody');
-  if (!tbody) return;
-  const search = (val('searchExpense') || '').toLowerCase();
-  const category = val('filterCategory');
+function setHistoryRange(range) {
+  historyState.range = range;
+  historyState.page = 1;
 
-  const rows = APP_DATA.expenses.filter(e => {
-    const mS = !search || String(e.description || '').toLowerCase().includes(search);
-    const mC = !category || e.category_id === category;
-    return mS && mC;
+  if (range !== 'all') {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - (range - 1));
+
+    document.getElementById('historyDateFrom').value = toISODate(from);
+    document.getElementById('historyDateTo').value = toISODate(to);
+    historyState.dateFrom = toISODate(from);
+    historyState.dateTo = toISODate(to);
+  } else {
+    document.getElementById('historyDateFrom').value = '';
+    document.getElementById('historyDateTo').value = '';
+    historyState.dateFrom = '';
+    historyState.dateTo = '';
+  }
+
+  document.querySelectorAll('.filter-tab').forEach(btn => {
+    btn.classList.toggle('active', String(btn.dataset.range) === String(range));
   });
 
-  const pageSize = Number(val('pageSize')) || 10;
-  const totalRows = rows.length;
-  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-  if (currentExpensePage > totalPages) currentExpensePage = totalPages;
-  if (currentExpensePage < 1) currentExpensePage = 1;
+  renderHistoryGrouped();
+}
 
-  if (!totalRows) {
-    tbody.innerHTML = '<tr><td colspan="6" class="py-10 text-center text-sm text-slate-400">ไม่พบรายการ</td></tr>';
-    renderExpensePagination(0, 0, pageSize);
+function applyHistoryFilter() {
+  historyState.dateFrom = document.getElementById('historyDateFrom').value || '';
+  historyState.dateTo   = document.getElementById('historyDateTo').value || '';
+  historyState.category = document.getElementById('filterCategory').value || '';
+  historyState.page = 1;
+
+  document.querySelectorAll('.filter-tab').forEach(btn => btn.classList.remove('active'));
+
+  renderHistoryGrouped();
+}
+
+function toISODate(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+/* =====================================================
+   HISTORY — RENDER GROUPED
+   ===================================================== */
+function renderHistoryGrouped() {
+  const el = document.getElementById('historyGroupedList');
+  if (!el) return;
+
+  const rows = (APP_DATA.expenses || []).filter(e => {
+    if (historyState.dateFrom && e.expense_date < historyState.dateFrom) return false;
+    if (historyState.dateTo   && e.expense_date > historyState.dateTo)   return false;
+    if (historyState.category && e.category_id !== historyState.category) return false;
+    return true;
+  });
+
+  rows.sort((a, b) => String(b.expense_date).localeCompare(String(a.expense_date)));
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="history-empty"><i class="fa-regular fa-folder-open text-3xl mb-2 block"></i>ไม่พบรายการ</div>';
+    document.getElementById('expensePagination').innerHTML = '';
     return;
   }
 
-  const startIndex = (currentExpensePage - 1) * pageSize;
-  const pageRows = rows.slice(startIndex, startIndex + pageSize);
+  const groups = {};
+  rows.forEach(e => {
+    const key = e.expense_date;
+    if (!groups[key]) groups[key] = { date: key, items: [], total: 0 };
+    groups[key].items.push(e);
+    groups[key].total += Number(e.amount || 0);
+  });
 
-  tbody.innerHTML = pageRows.map(e => `
-    <tr>
-      <td data-label="วันที่"><span class="num text-sm font-semibold text-slate-500">${escapeHtml(e.expense_date)}</span></td>
-      <td data-label="รายละเอียด">
-        <div class="font-bold text-[#1e1b4b]">${escapeHtml(e.description)}</div>
-        ${e.note ? '<div class="text-xs text-slate-400 mt-0.5">' + escapeHtml(e.note) + '</div>' : ''}
-      </td>
-      <td data-label="หมวดหมู่"><span class="badge badge-active">${escapeHtml(e.category_name)}</span></td>
-      <td data-label="การชำระเงิน"><span class="text-sm text-slate-600 font-medium">${escapeHtml(e.payment_type_name)}</span></td>
-      <td data-label="จำนวนเงิน" class="text-right num"><span class="font-bold text-rose-600">-${money(e.amount).replace(/\.00$/, '')}</span></td>
-      <td data-label="จัดการ" class="text-right">
-        <div class="inline-flex items-center gap-1">
-          <button class="touch-btn text-indigo-600" onclick="editExpense('${e.expense_id}')"><i class="fa-solid fa-pen"></i></button>
-          <button class="touch-btn text-rose-500" onclick="removeExpense('${e.expense_id}')"><i class="fa-solid fa-trash"></i></button>
+  const groupKeys = Object.keys(groups);
+  const totalGroups = groupKeys.length;
+  const totalPages = Math.max(1, Math.ceil(totalGroups / historyState.perPage));
+  if (historyState.page > totalPages) historyState.page = totalPages;
+  if (historyState.page < 1) historyState.page = 1;
+
+  const start = (historyState.page - 1) * historyState.perPage;
+  const pageKeys = groupKeys.slice(start, start + historyState.perPage);
+
+  el.innerHTML = pageKeys.map(key => {
+    const g = groups[key];
+    const thaiDate = formatThaiDate(key);
+    const dayName = getDayName(key);
+
+    return `
+      <div class="history-date-group">
+        <div class="history-date-header">
+          <div class="history-date-label">
+            <i class="fa-regular fa-calendar"></i>
+            <span>${dayName}ที่ ${thaiDate}</span>
+          </div>
+          <div class="history-date-total">${money(g.total).replace(/\.00$/, '')}</div>
         </div>
-      </td>
-    </tr>
-  `).join('');
-
-  renderExpensePagination(totalRows, totalPages, pageSize);
-}
-
-function resetExpensePage() { currentExpensePage = 1; renderExpenseTable(); }
-
-function goToExpensePage(page) {
-  currentExpensePage = page;
-  renderExpenseTable();
-  const wrap = document.querySelector('#viewHistory .table-wrap');
-  if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function buildPageNumbers_(current, total) {
-  const pages = [];
-  if (total <= 7) { for (let i = 1; i <= total; i++) pages.push(i); return pages; }
-  pages.push(1);
-  if (current > 3) pages.push('...');
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (current < total - 2) pages.push('...');
-  pages.push(total);
-  return pages;
-}
-
-function renderExpensePagination(totalRows, totalPages, pageSize) {
-  const el = document.getElementById('expensePagination');
-  if (!el) return;
-  if (!totalRows) { el.innerHTML = '<div class="text-sm text-slate-400">ไม่พบข้อมูล</div>'; return; }
-
-  const startItem = (currentExpensePage - 1) * pageSize + 1;
-  const endItem = Math.min(currentExpensePage * pageSize, totalRows);
-  const pageNumbers = buildPageNumbers_(currentExpensePage, totalPages);
-
-  const pageButtons = pageNumbers.map(p => {
-    if (p === '...') return '<span class="px-2 text-sm text-slate-400">...</span>';
-    const activeClass = p === currentExpensePage ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-indigo-50';
-    return `<button class="w-9 h-9 text-sm rounded-lg font-semibold ${activeClass}" onclick="goToExpensePage(${p})">${p}</button>`;
+        ${g.items.map(e => renderHistoryItem(e)).join('')}
+      </div>
+    `;
   }).join('');
 
-  el.innerHTML = `
-    <div class="text-sm text-slate-500 font-medium">แสดง <span class="num font-bold text-[#1e1b4b]">${startItem}-${endItem}</span> จาก <span class="num font-bold text-[#1e1b4b]">${totalRows}</span></div>
-    <div class="flex items-center gap-1">
-      <button class="touch-btn border border-indigo-100 text-slate-500 disabled:opacity-30" onclick="goToExpensePage(${currentExpensePage - 1})" ${currentExpensePage <= 1 ? 'disabled' : ''}><i class="fa-solid fa-chevron-left text-xs"></i></button>
-      <div class="hidden sm:flex items-center gap-1">${pageButtons}</div>
-      <span class="sm:hidden text-sm font-semibold text-indigo-600 px-3">${currentExpensePage} / ${totalPages}</span>
-      <button class="touch-btn border border-indigo-100 text-slate-500 disabled:opacity-30" onclick="goToExpensePage(${currentExpensePage + 1})" ${currentExpensePage >= totalPages ? 'disabled' : ''}><i class="fa-solid fa-chevron-right text-xs"></i></button>
+  renderHistoryPagination(totalGroups, totalPages);
+}
+
+/* =====================================================
+   HISTORY — SINGLE ITEM
+   ===================================================== */
+function renderHistoryItem(e) {
+  const meta = getCategoryIcon(e.category_name);
+  const note = (e.description || '').trim();
+
+  return `
+    <div class="history-item" style="--item-color:${meta.color}">
+      <div class="history-item-icon" style="background:${meta.color}">
+        <i class="${meta.icon}"></i>
+      </div>
+      <div class="history-item-main">
+        <div class="history-item-title">${escapeHtml(e.category_name)}</div>
+        <div class="history-item-meta">
+          <span class="history-badge history-badge-payment">
+            <i class="fa-solid fa-money-bill-wave text-[9px]"></i>
+            ${escapeHtml(e.payment_type_name || '-')}
+          </span>
+          <span class="history-badge-note">
+            <i class="fa-solid fa-pen text-[9px]"></i>
+            ${escapeHtml(note || '-')}
+          </span>
+        </div>
+      </div>
+      <div class="history-item-right">
+        <div class="history-item-amount">${money(e.amount).replace(/\.00$/, '')}</div>
+        <div class="history-item-actions">
+          <button class="history-action-btn history-action-btn-edit" onclick="editExpense('${e.expense_id}')" aria-label="แก้ไข">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button class="history-action-btn history-action-btn-delete" onclick="removeExpense('${e.expense_id}')" aria-label="ลบ">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
     </div>
   `;
+}
+
+/* =====================================================
+   HISTORY — DATE HELPERS
+   ===================================================== */
+function formatThaiDate(isoDate) {
+  const [y, m, d] = String(isoDate).split('-').map(Number);
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  return `${d} ${months[m - 1]} ${y + 543}`;
+}
+
+function getDayName(isoDate) {
+  const [y, m, d] = String(isoDate).split('-').map(Number);
+  const day = new Date(y, m - 1, d).getDay();
+  return ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'][day];
+}
+
+/* =====================================================
+   HISTORY — PAGINATION
+   ===================================================== */
+function renderHistoryPagination(totalGroups, totalPages) {
+  const el = document.getElementById('expensePagination');
+  if (!el) return;
+
+  const start = (historyState.page - 1) * historyState.perPage + 1;
+  const end = Math.min(historyState.page * historyState.perPage, totalGroups);
+
+  el.innerHTML = `
+    <div class="text-sm text-slate-500 font-medium">
+      แสดงวันที่ <span class="num font-bold text-[#1e1b4b]">${start}-${end}</span>
+      จาก <span class="num font-bold text-[#1e1b4b]">${totalGroups}</span> วัน
+    </div>
+    <div class="flex items-center gap-1">
+      <button class="touch-btn border border-indigo-100 text-slate-500 disabled:opacity-30"
+        onclick="goToHistoryPage(${historyState.page - 1})"
+        ${historyState.page <= 1 ? 'disabled' : ''}>
+        <i class="fa-solid fa-chevron-left text-xs"></i>
+      </button>
+      <span class="text-sm font-semibold text-indigo-600 px-3">${historyState.page} / ${totalPages}</span>
+      <button class="touch-btn border border-indigo-100 text-slate-500 disabled:opacity-30"
+        onclick="goToHistoryPage(${historyState.page + 1})"
+        ${historyState.page >= totalPages ? 'disabled' : ''}>
+        <i class="fa-solid fa-chevron-right text-xs"></i>
+      </button>
+    </div>
+  `;
+}
+
+function goToHistoryPage(page) {
+  historyState.page = page;
+  renderHistoryGrouped();
+  document.getElementById('viewHistory').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /* =====================================================
@@ -733,7 +867,7 @@ async function saveCategory() {
     }
     toast(result.message || 'บันทึกสำเร็จ');
     closeCategoryModal();
-    await loadAllData();    // master เปลี่ยน → โหลดใหม่ทั้งหมด
+    await loadAllData();
   } catch (err) {
     toast('Error: ' + (err.message || err));
   } finally {
@@ -833,25 +967,3 @@ document.querySelectorAll('.modal').forEach(m => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
 });
-
-/* ✅ ฟังก์ชันวิ่งตัวเลข */
-function renderDashboard() {
-  const d = APP_DATA.dashboard || {};
-
-  // ✅ ใช้ animateNumber แทน textContent ตรง ๆ
-  animateNumber(document.getElementById('heroMonth'), Number(d.month || 0));
-  animateNumber(document.getElementById('heroBudget'), Number(d.totalBudget || 0), 800, (v) => money(v).replace(/\.00$/, ''));
-  animateNumber(document.getElementById('heroRemain'), Number(d.totalBudgetRemaining || 0), 800, (v) => money(v).replace(/\.00$/, ''));
-
-  document.getElementById('heroPercent').textContent = (d.budgetUsagePercent || 0) + '%';
-  document.getElementById('heroProgress').style.width = Math.min(100, d.budgetUsagePercent || 0) + '%';
-  document.getElementById('heroCompare').textContent = '-3.1%';
-
-  animateNumber(document.getElementById('pillToday'), Number(d.today || 0), 800, (v) => money(v).replace(/\.00$/, ''));
-  animateNumber(document.getElementById('pillWeek'), Number(d.week || 0), 800, (v) => money(v).replace(/\.00$/, ''));
-  animateNumber(document.getElementById('pillYear'), Number(d.year || 0), 800, (v) => money(v).replace(/\.00$/, ''));
-
-  renderBudgetGrid(d);
-  renderPaymentChart(d);
-  renderCategoryChart(d);
-}
