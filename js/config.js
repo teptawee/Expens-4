@@ -1,13 +1,12 @@
 /**
  * config.js - ค่าคงที่ทั้งหมด
- * ✅ แก้ GAS_API_URL หลัง Deploy Google Apps Script เป็น Web App
  */
 
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzFRV5Of0HPMwEkI5Qp9qI304AJ7j0AJhdjHUiQzveLZnyGcX7yEkaNCnNAd8_Uyiy0xA/exec'
 
 const APP = {
   NAME: 'ระบบบันทึกค่าใช้จ่ายประจำวัน',
-  VERSION: '1.2 COMPACT',
+  VERSION: '1.3 FAST',
   TIMEZONE: 'Asia/Bangkok'
 };
 
