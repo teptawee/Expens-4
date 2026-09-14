@@ -23,7 +23,7 @@ let historyState = {
   dateTo: '',
   category: '',
   page: 1,
-  perPage: 5,                 // 5 วัน / หน้า
+  perPage: 5             
 };
 
 /* =====================================================
