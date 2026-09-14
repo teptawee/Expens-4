@@ -833,3 +833,25 @@ document.querySelectorAll('.modal').forEach(m => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
 });
+
+/* ✅ ฟังก์ชันวิ่งตัวเลข */
+function renderDashboard() {
+  const d = APP_DATA.dashboard || {};
+
+  // ✅ ใช้ animateNumber แทน textContent ตรง ๆ
+  animateNumber(document.getElementById('heroMonth'), Number(d.month || 0));
+  animateNumber(document.getElementById('heroBudget'), Number(d.totalBudget || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+  animateNumber(document.getElementById('heroRemain'), Number(d.totalBudgetRemaining || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+
+  document.getElementById('heroPercent').textContent = (d.budgetUsagePercent || 0) + '%';
+  document.getElementById('heroProgress').style.width = Math.min(100, d.budgetUsagePercent || 0) + '%';
+  document.getElementById('heroCompare').textContent = '-3.1%';
+
+  animateNumber(document.getElementById('pillToday'), Number(d.today || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+  animateNumber(document.getElementById('pillWeek'), Number(d.week || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+  animateNumber(document.getElementById('pillYear'), Number(d.year || 0), 800, (v) => money(v).replace(/\.00$/, ''));
+
+  renderBudgetGrid(d);
+  renderPaymentChart(d);
+  renderCategoryChart(d);
+}
