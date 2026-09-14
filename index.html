@@ -34,7 +34,7 @@
 
 <body class="min-h-screen flex flex-col antialiased">
 
-<!-- ========== HEADER ========== -->
+<!-- ========== HEADER (LOCKED) ========== -->
 <header class="app-header safe-top">
   <div class="app-container h-16 flex items-center justify-between gap-6">
     <button class="flex items-center gap-3 text-left min-w-0" onclick="showView('dashboard')">
@@ -253,7 +253,6 @@
     <section class="view" id="viewHistory">
       <div class="zen-card p-5" style="background: linear-gradient(135deg, #fef5ff 0%, #fff5f8 100%); border: 1.5px dashed #fbcfe8;">
 
-        <!-- Header -->
         <div class="flex items-center gap-3 mb-5">
           <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 text-pink-500 flex items-center justify-center text-lg shadow-sm">
             <i class="fa-solid fa-receipt"></i>
@@ -263,7 +262,6 @@
           </div>
         </div>
 
-        <!-- Filter Tabs -->
         <div class="flex flex-wrap items-center gap-2 mb-4">
           <button class="filter-tab active" data-range="7" onclick="setHistoryRange(7)">
             <i class="fa-solid fa-calendar-day text-[10px]"></i> 7 วันล่าสุด
@@ -276,7 +274,6 @@
           </button>
         </div>
 
-        <!-- Filter Row -->
         <div class="p-3 rounded-2xl bg-white/70 border border-pink-100/80 mb-4">
           <div class="grid-2-mobile mb-3" style="gap:10px">
             <div class="relative">
@@ -299,10 +296,8 @@
           </button>
         </div>
 
-        <!-- Grouped List -->
         <div id="historyGroupedList"></div>
 
-        <!-- Pagination -->
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-2 border-t border-pink-100" id="expensePagination"></div>
 
       </div>
@@ -434,7 +429,6 @@
 <div class="toast" id="toast"></div>
 
 <!-- ========== SCRIPTS ========== -->
-<!-- ========== SCRIPTS ========== -->
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/charts.js"></script>
@@ -444,7 +438,5 @@
 <script src="js/history.js"></script>
 <script src="js/master.js"></script>
 <script src="js/app.js"></script>
-</body>
-</html>
 </body>
 </html>
