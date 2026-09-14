@@ -347,3 +347,11 @@ input[type="number"] { -moz-appearance: textfield; }
   .fab-btn { width: 54px; height: 54px; }
   .fab-btn i { font-size: 20px; }
 }
+
+@media (min-width: 1280px) {
+  .desktop-nav {
+    display: flex !important;
+    gap: 1rem;              /* ✅ ระยะห่างระหว่างปุ่ม (16px) */
+    padding: 0.5rem;        /* ✅ padding ในกรอบ */
+  }
+}
