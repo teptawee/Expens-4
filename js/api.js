@@ -1,34 +1,64 @@
 /**
  * api.js - จัดการเรียก API ไปยัง Google Apps Script
- * ใช้ fetch + POST และ cache ในหน่วยความจำ
+ * ✅ เพิ่ม persistent cache (sessionStorage) + TTL 5 นาที + in-flight dedupe
  */
 
 const API_CACHE = new Map();
-const CACHE_TTL = 30000; // 30 วินาที
+const CACHE_TTL = 5 * 60 * 1000;          // 5 นาที
+const CACHE_PREFIX = 'exp_cache_';
+const INFLIGHT = new Map();                // กันยิงซ้ำตอนเรียกพร้อมกัน
 
 function cacheKey(fn, args) {
   return fn + ':' + JSON.stringify(args || {});
 }
 
 function getCached(key) {
+  // 1) memory cache
   const item = API_CACHE.get(key);
-  if (!item) return null;
-  if (Date.now() - item.time > CACHE_TTL) {
-    API_CACHE.delete(key);
-    return null;
-  }
-  return item.data;
+  if (item && Date.now() - item.time <= CACHE_TTL) return item.data;
+
+  // 2) sessionStorage fallback
+  try {
+    const raw = sessionStorage.getItem(CACHE_PREFIX + key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.time <= CACHE_TTL) {
+        API_CACHE.set(key, parsed);
+        return parsed.data;
+      }
+      sessionStorage.removeItem(CACHE_PREFIX + key);
+    }
+  } catch (e) { /* ignore */ }
+
+  return null;
 }
 
 function setCache(key, data) {
-  API_CACHE.set(key, { data, time: Date.now() });
+  const entry = { data, time: Date.now() };
+  API_CACHE.set(key, entry);
+  try {
+    sessionStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry));
+  } catch (e) { /* quota exceeded */ }
 }
 
 function clearCache(prefix) {
-  if (!prefix) { API_CACHE.clear(); return; }
-  for (const k of API_CACHE.keys()) {
+  if (!prefix) {
+    API_CACHE.clear();
+    try {
+      Object.keys(sessionStorage).forEach(k => {
+        if (k.startsWith(CACHE_PREFIX)) sessionStorage.removeItem(k);
+      });
+    } catch (e) {}
+    return;
+  }
+  for (const k of [...API_CACHE.keys()]) {
     if (k.startsWith(prefix)) API_CACHE.delete(k);
   }
+  try {
+    Object.keys(sessionStorage).forEach(k => {
+      if (k.startsWith(CACHE_PREFIX + prefix)) sessionStorage.removeItem(k);
+    });
+  } catch (e) {}
 }
 
 async function callGAS(fn, args) {
@@ -36,12 +66,10 @@ async function callGAS(fn, args) {
     throw new Error('ยังไม่ได้ตั้งค่า GAS_API_URL ใน js/config.js');
   }
 
-  const payload = { fn, args: args || {} };
-
   const res = await fetch(GAS_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ fn, args: args || {} }),
     redirect: 'follow'
   });
 
@@ -51,32 +79,45 @@ async function callGAS(fn, args) {
 
 async function apiCall(fn, args, useCache = true) {
   const key = cacheKey(fn, args);
+
   if (useCache) {
     const cached = getCached(key);
     if (cached) return cached;
   }
 
-  const result = await callGAS(fn, args);
-  if (useCache && result && result.success !== false) {
-    setCache(key, result);
-  }
-  return result;
+  // ✅ กันยิงซ้ำ: ถ้ากำลังโหลดอยู่ ให้รอ promise เดิม
+  if (INFLIGHT.has(key)) return INFLIGHT.get(key);
+
+  const promise = (async () => {
+    try {
+      const result = await callGAS(fn, args);
+      if (useCache && result && result.success !== false) {
+        setCache(key, result);
+      }
+      return result;
+    } finally {
+      INFLIGHT.delete(key);
+    }
+  })();
+
+  INFLIGHT.set(key, promise);
+  return promise;
 }
 
 const API = {
-  getMasterData: () => apiCall('getMasterData', {}, true),
-  getExpenses: () => apiCall('getExpenses', {}, true),
-  getDashboard: () => apiCall('getDashboard', {}, true),
-  getWeeklyComparison: () => apiCall('getWeeklyComparison', {}, true),
+  getMasterData: () => apiCall('getMasterData'),
+  getExpenses: () => apiCall('getExpenses'),
+  getDashboard: () => apiCall('getDashboard'),
+  getWeeklyComparison: () => apiCall('getWeeklyComparison'),
 
-  saveExpense: (data) => apiCall('saveExpense', { data }, false).then(r => { clearCache('get'); return r; }),
-  deleteExpense: (id) => apiCall('deleteExpense', { expenseId: id }, false).then(r => { clearCache('get'); return r; }),
+  saveExpense: (data) => apiCall('saveExpense', { data }, false).then(r => { clearCache(); return r; }),
+  deleteExpense: (id) => apiCall('deleteExpense', { expenseId: id }, false).then(r => { clearCache(); return r; }),
 
-  addCategory: (data) => apiCall('addCategory', { data }, false).then(r => { clearCache('get'); return r; }),
-  updateCategory: (data) => apiCall('updateCategory', { data }, false).then(r => { clearCache('get'); return r; }),
-  deleteCategory: (id) => apiCall('deleteCategory', { categoryId: id }, false).then(r => { clearCache('get'); return r; }),
+  addCategory: (data) => apiCall('addCategory', { data }, false).then(r => { clearCache(); return r; }),
+  updateCategory: (data) => apiCall('updateCategory', { data }, false).then(r => { clearCache(); return r; }),
+  deleteCategory: (id) => apiCall('deleteCategory', { categoryId: id }, false).then(r => { clearCache(); return r; }),
 
-  addPaymentType: (data) => apiCall('addPaymentType', { data }, false).then(r => { clearCache('get'); return r; }),
-  updatePaymentType: (data) => apiCall('updatePaymentType', { data }, false).then(r => { clearCache('get'); return r; }),
-  deletePaymentType: (id) => apiCall('deletePaymentType', { paymentTypeId: id }, false).then(r => { clearCache('get'); return r; })
+  addPaymentType: (data) => apiCall('addPaymentType', { data }, false).then(r => { clearCache(); return r; }),
+  updatePaymentType: (data) => apiCall('updatePaymentType', { data }, false).then(r => { clearCache(); return r; }),
+  deletePaymentType: (id) => apiCall('deletePaymentType', { paymentTypeId: id }, false).then(r => { clearCache(); return r; })
 };
