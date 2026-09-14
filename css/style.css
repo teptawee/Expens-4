@@ -380,6 +380,7 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; marg
 input[type="number"] { -moz-appearance: textfield; }
 
 .safe-top { padding-top: var(--safe-top); }
+.app-header.safe-top { padding-top: var(--safe-top); }
 
 .tx-item {
   display: flex; align-items: center; gap: 14px;
