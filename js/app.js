@@ -1,5 +1,6 @@
 /**
  * app.js - Logic หลักของแอป
+ * ✅ ปรับให้โหลดแบบ progressive + refresh เฉพาะที่จำเป็น
  */
 
 const APP_DATA = {
@@ -25,40 +26,80 @@ function initApp() {
   loadAllData();
 }
 
+/* =====================================================
+   LOAD DATA (progressive — แสดงทันทีที่แต่ละตัวเสร็จ)
+   ===================================================== */
 async function loadAllData() {
   showLoading(true, 'กำลังโหลดข้อมูล...');
+
+  const tasks = [
+    API.getMasterData().then(r => {
+      if (r && r.success !== false) {
+        APP_DATA.categories = r.categories || [];
+        APP_DATA.paymentTypes = r.paymentTypes || [];
+        renderMasterDropdowns();
+        renderMasterTables();
+      }
+    }).catch(e => console.warn('master:', e)),
+
+    API.getExpenses().then(r => {
+      if (r && r.success !== false) {
+        APP_DATA.expenses = r.data || [];
+        renderExpenseTable();
+        renderRecentTransactions();
+      }
+    }).catch(e => console.warn('expenses:', e)),
+
+    API.getDashboard().then(r => {
+      if (r && r.success !== false) {
+        APP_DATA.dashboard = r.data || {};
+        renderDashboard();
+      }
+    }).catch(e => console.warn('dashboard:', e)),
+
+    API.getWeeklyComparison().then(r => {
+      if (r && r.success !== false) {
+        APP_DATA.weeklyComparison = r.data || {};
+        renderWeeklyComparison();
+      }
+    }).catch(e => console.warn('weekly:', e))
+  ];
+
   try {
-    const [master, expenses, dashboard, weekly] = await Promise.all([
-      API.getMasterData(),
+    await Promise.allSettled(tasks);
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* =====================================================
+   REFRESH AFTER CHANGE (โหลดเฉพาะ 3 ตัว — ไม่รวม master)
+   ===================================================== */
+async function refreshAfterChange() {
+  clearCache();                            // เคลียร์ cache เก่า
+  showLoading(true, 'กำลังอัปเดต...');
+  try {
+    const [expenses, dashboard, weekly] = await Promise.all([
       API.getExpenses(),
       API.getDashboard(),
       API.getWeeklyComparison()
     ]);
-
-    if (master && master.success !== false) {
-      APP_DATA.categories = master.categories || [];
-      APP_DATA.paymentTypes = master.paymentTypes || [];
-      renderMasterDropdowns();
-      renderMasterTables();
-    }
 
     if (expenses && expenses.success !== false) {
       APP_DATA.expenses = expenses.data || [];
       renderExpenseTable();
       renderRecentTransactions();
     }
-
     if (dashboard && dashboard.success !== false) {
       APP_DATA.dashboard = dashboard.data || {};
       renderDashboard();
     }
-
     if (weekly && weekly.success !== false) {
       APP_DATA.weeklyComparison = weekly.data || {};
       renderWeeklyComparison();
     }
   } catch (err) {
-    toast('โหลดข้อมูลไม่สำเร็จ: ' + (err.message || err));
+    toast('อัปเดตไม่สำเร็จ: ' + (err.message || err));
   } finally {
     showLoading(false);
   }
@@ -76,7 +117,6 @@ function showView(view) {
   const nav = document.getElementById('nav' + view.charAt(0).toUpperCase() + view.slice(1));
   if (nav) nav.classList.add('active');
 
-  // Mobile bottom nav
   document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
   const navMob = document.getElementById('nav' + view.charAt(0).toUpperCase() + view.slice(1) + 'Mob');
   if (navMob) navMob.classList.add('active');
@@ -426,7 +466,7 @@ async function saveExpense() {
     }
     toast(result.message || 'บันทึกสำเร็จ');
     resetExpenseForm();
-    await loadAllData();
+    await refreshAfterChange();     // ✅ เปลี่ยนจาก loadAllData()
     showView('history');
   } catch (err) {
     toast('Error: ' + (err.message || err));
@@ -455,7 +495,7 @@ async function removeExpense(id) {
       return;
     }
     toast(result.message || 'ลบสำเร็จ');
-    await loadAllData();
+    await refreshAfterChange();     // ✅ เปลี่ยน
   } catch (err) {
     toast('Error: ' + (err.message || err));
   } finally {
@@ -693,7 +733,7 @@ async function saveCategory() {
     }
     toast(result.message || 'บันทึกสำเร็จ');
     closeCategoryModal();
-    await loadAllData();
+    await loadAllData();    // master เปลี่ยน → โหลดใหม่ทั้งหมด
   } catch (err) {
     toast('Error: ' + (err.message || err));
   } finally {
