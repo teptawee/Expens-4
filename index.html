@@ -251,38 +251,64 @@
     </section>
 
     <!-- HISTORY VIEW -->
-    <section class="view" id="viewHistory">
-      <div class="mb-5">
-        <h1 class="text-2xl font-bold tracking-tight text-[#1e1b4b]">ประวัติ</h1>
-        <p class="text-sm text-slate-500 mt-1">รายการย้อนหลัง</p>
+  <!-- HISTORY VIEW -->
+<section class="view" id="viewHistory">
+  <div class="zen-card p-5" style="background: linear-gradient(135deg, #fef5ff 0%, #fff5f8 100%); border: 1.5px dashed #fbcfe8;">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 text-pink-500 flex items-center justify-center text-lg shadow-sm">
+        <i class="fa-solid fa-receipt"></i>
       </div>
-      <div class="zen-card p-4">
-        <div class="space-y-3 mb-5">
-          <div class="relative">
-            <input class="form-input pl-11" id="searchExpense" oninput="resetExpensePage()" placeholder="ค้นหา..." type="text"/>
-            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-sm text-indigo-400 pointer-events-none"></i>
-          </div>
-          <div class="grid-2-mobile">
-            <select class="form-input" id="filterCategory" onchange="resetExpensePage()"><option value="">ทุกหมวดหมู่</option></select>
-            <select class="form-input" id="pageSize" onchange="resetExpensePage()">
-              <option value="10">10 รายการ</option>
-              <option value="20">20 รายการ</option>
-              <option value="50">50 รายการ</option>
-            </select>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table class="w-full zen-table text-left">
-            <thead><tr>
-              <th>วันที่</th><th>รายละเอียด</th><th>หมวดหมู่</th><th>การชำระเงิน</th>
-              <th class="text-right">จำนวนเงิน</th><th class="text-right">จัดการ</th>
-            </tr></thead>
-            <tbody id="expenseTableBody"></tbody>
-          </table>
-        </div>
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-4 border-t border-indigo-50" id="expensePagination"></div>
+      <div>
+        <h2 class="text-lg font-bold text-[#1e1b4b]">รายการทั้งหมด</h2>
       </div>
-    </section>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <button class="filter-tab active" data-range="7" onclick="setHistoryRange(7)">
+        <i class="fa-solid fa-calendar-day text-[10px]"></i> 7 วันล่าสุด
+      </button>
+      <button class="filter-tab" data-range="30" onclick="setHistoryRange(30)">
+        <i class="fa-regular fa-calendar text-[10px]"></i> 30 วัน
+      </button>
+      <button class="filter-tab" data-range="all" onclick="setHistoryRange('all')">
+        <i class="fa-solid fa-list text-[10px]"></i> ทั้งหมด
+      </button>
+    </div>
+
+    <!-- Filter Row -->
+    <div class="p-3 rounded-2xl bg-white/70 border border-pink-100/80 mb-4">
+      <div class="grid-2-mobile mb-3" style="gap:10px">
+        <div class="relative">
+          <input class="form-input pl-10 text-sm" id="historyDateFrom" type="date"/>
+          <i class="fa-regular fa-calendar absolute left-3.5 top-1/2 -translate-y-1/2 text-pink-400 text-sm pointer-events-none"></i>
+        </div>
+        <div class="relative">
+          <input class="form-input pl-10 text-sm" id="historyDateTo" type="date"/>
+          <i class="fa-regular fa-calendar absolute left-3.5 top-1/2 -translate-y-1/2 text-pink-400 text-sm pointer-events-none"></i>
+        </div>
+      </div>
+      <div class="relative mb-3">
+        <select class="form-input pl-10 text-sm" id="filterCategory">
+          <option value="">ทุกหมวดหมู่</option>
+        </select>
+        <i class="fa-solid fa-tag absolute left-3.5 top-1/2 -translate-y-1/2 text-pink-400 text-sm pointer-events-none"></i>
+      </div>
+      <button class="search-gradient-btn" onclick="applyHistoryFilter()">
+        <i class="fa-solid fa-magnifying-glass text-sm"></i> ค้นหา
+      </button>
+    </div>
+
+    <!-- Grouped List -->
+    <div id="historyGroupedList"></div>
+
+    <!-- Pagination -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-2 border-t border-pink-100" id="expensePagination"></div>
+
+  </div>
+</section>
 
     <!-- MASTER VIEW -->
     <section class="view" id="viewMaster">
