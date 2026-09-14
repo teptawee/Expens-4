@@ -14,18 +14,45 @@ const APP_DATA = {
 };
 
 /* =====================================================
+   HEADER SCROLL EFFECT
+   ===================================================== */
+function initHeaderScroll() {
+  const header = document.querySelector('.app-header');
+  if (!header) return;
+
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      if (window.scrollY > 8) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
+
+/* =====================================================
    INIT
    ===================================================== */
 document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
   console.log('🚀 initApp started');
+  initHeaderScroll();          // ✅ เพิ่มบรรทัดนี้
   setToday();
   setCurrentDate();
   showView('dashboard');
   loadAllData();
   setHistoryRange(7);
 }
+
+/* ... ที่เหลือคงเดิม ... */
 
 /* =====================================================
    LOAD DATA
